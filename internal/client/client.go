@@ -8,13 +8,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mayuka-c/govmomi-practice/config"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
+
+	"github.com/mayuka-c/govmomi-practice/config"
 )
 
 type VCentreClient struct {
@@ -69,7 +70,6 @@ func (vc *VCentreClient) GetAllDataCenters() ([]*object.Datacenter, error) {
 		return nil, err
 	}
 
-	log.Println("Datacenters: ", datacenters)
 	return datacenters, nil
 }
 
@@ -79,7 +79,7 @@ func (n ByName) Len() int           { return len(n) }
 func (n ByName) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
 func (n ByName) Less(i, j int) bool { return strings.ToLower(n[i].Name) < strings.ToLower(n[j].Name) }
 
-func (vc *VCentreClient) GetVMs() ([]mo.VirtualMachine, []mo.VirtualMachine) {
+func (vc *VCentreClient) GetAllVMs() ([]mo.VirtualMachine, []mo.VirtualMachine) {
 	f := find.NewFinder(vc.client.Client, true)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -131,4 +131,59 @@ func (vc *VCentreClient) GetVMs() ([]mo.VirtualMachine, []mo.VirtualMachine) {
 	}
 
 	return virtualMachines, vmTemplates
+}
+
+func (vc *VCentreClient) GetAllDatastores() {
+	f := find.NewFinder(vc.client.Client, true)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dcList, err := vc.GetAllDataCenters()
+	if err != nil {
+		log.Fatalf("Logging in error: %s\n", err.Error())
+	}
+
+	var datastoresList []*object.Datastore
+
+	for _, dc := range dcList {
+		f.SetDatacenter(dc)
+		datastores, err := f.DatastoreList(ctx, "*")
+		if err != nil {
+			log.Fatalf("Logging in error: %s\n", err.Error())
+		}
+		datastoresList = append(datastoresList, datastores...)
+	}
+
+	fmt.Println("Datastores: ", datastoresList)
+}
+
+func (vc *VCentreClient) GetAllResourcePools() {
+	f := find.NewFinder(vc.client.Client, true)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dcList, err := vc.GetAllDataCenters()
+	if err != nil {
+		log.Fatalf("Logging in error: %s\n", err.Error())
+	}
+
+	var resourcePoolList []*object.ResourcePool
+
+	for _, dc := range dcList {
+		f.SetDatacenter(dc)
+		resourcePools, err := f.ResourcePoolList(ctx, "*")
+		if err != nil {
+			log.Fatalf("Logging in error: %s\n", err.Error())
+		}
+		resourcePoolList = append(resourcePoolList, resourcePools...)
+	}
+
+	fmt.Println("ResourcePools: ", resourcePoolList)
+}
+
+func (vc *VCentreClient) GetSnapshotDetailsOfVM(vm mo.VirtualMachine) {
+	snapshotList := vm.Snapshot.RootSnapshotList
+	fmt.Println("Snapshot: ", snapshotList)
 }

@@ -23,11 +23,16 @@ func main() {
 
 	client.GetAllDataCenters()
 
-	virtualMachines, vmTemplates := client.GetVMs()
+	virtualMachines, vmTemplates := client.GetAllVMs()
 	log.Printf("Virtual Machine Count: %d", len(virtualMachines))
 	fmt.Println("----------------------------")
 	for _, vm := range virtualMachines {
 		fmt.Println(vm.Name)
+		if vm.Snapshot != nil {
+			fmt.Println("Snapshot")
+			fmt.Println("--------------------------")
+			client.GetSnapshotDetailsOfVM(vm)
+		}
 	}
 	fmt.Printf("\n\n")
 	log.Printf("VM Templates Count: %d", len(vmTemplates))
@@ -35,4 +40,10 @@ func main() {
 	for _, vmTemplate := range vmTemplates {
 		fmt.Println(vmTemplate.Name)
 	}
+
+	fmt.Printf("\n\n")
+	client.GetAllDatastores()
+
+	fmt.Printf("\n\n")
+	client.GetAllResourcePools()
 }
